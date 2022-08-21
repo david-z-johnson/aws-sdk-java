@@ -24,7 +24,9 @@ import com.amazonaws.http.conn.SdkPlainSocketFactory;
 import com.amazonaws.http.conn.ssl.SdkTLSSocketFactory;
 import com.amazonaws.http.settings.HttpClientSettings;
 import com.amazonaws.internal.SdkSSLContext;
+
 import javax.net.ssl.KeyManager;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
@@ -35,6 +37,7 @@ import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -84,11 +87,7 @@ public class ApacheConnectionManagerFactory implements
     }
 
     private ConnectionSocketFactory getPreferredSocketFactory(HttpClientSettings settings) {
-        ConnectionSocketFactory sslsf = settings.getApacheHttpClientConfig().getSslSocketFactory();
-
-        return sslsf != null
-                ? sslsf
-                : new SdkTLSSocketFactory(
+        return new SdkTLSSocketFactory(
                 SdkSSLContext.getPreferredSSLContext(getKeyManagers(settings), settings.getSecureRandom()),
                 getHostNameVerifier(settings));
     }
@@ -123,10 +122,7 @@ public class ApacheConnectionManagerFactory implements
 
     private HostnameVerifier getHostNameVerifier
             (HttpClientSettings options) {
-        // TODO Need to find a better way to handle these deprecations.
-        return options.useBrowserCompatibleHostNameVerifier()
-                ? SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER
-                : SSLConnectionSocketFactory.STRICT_HOSTNAME_VERIFIER;
+        return new NoopHostnameVerifier();
     }
 
     private Registry<ConnectionSocketFactory> createSocketFactoryRegistry(ConnectionSocketFactory sslSocketFactory) {
